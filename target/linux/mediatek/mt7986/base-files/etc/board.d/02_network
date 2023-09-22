@@ -1,0 +1,73 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+mediatek_setup_interfaces()
+{
+	local board="$1"
+
+	case $board in
+	*fpga*)
+		ucidef_set_interfaces_lan_wan "eth0" "eth1"
+		ucidef_add_switch "switch0" \
+			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6u@eth0" "5u@eth1"
+		;;
+	*gsw*)
+		ucidef_set_interfaces_lan_wan "eth0" "eth1"
+		ucidef_add_switch "switch0" \
+			"0:lan" "1:lan" "2:lan" "3:lan" "4:lan" "5:lan" "6u@eth0"
+		;;
+	xiaomi,redmi-router-ax6000*)
+		ucidef_set_interfaces_lan_wan "eth0" "eth1"
+		ucidef_add_switch "switch0" \
+			"1:lan:4" "2:lan:3" "3:lan:2"  "4:wan" "6u@eth0" "5u@eth1"
+		;;
+	*)
+		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2 lan3 lan4 lan5" eth1
+		;;
+	esac
+}
+
+mediatek_setup_macs()
+{
+	local board="$1"
+	local lan_mac=""
+	local wan_mac=""
+
+	case $board in
+	xiaomi,redmi-router-ax6000*)
+		wan_mac=$(mtd_get_mac_ascii Bdata ethaddr_wan)
+		lan_mac=$(mtd_get_mac_ascii Bdata ethaddr)
+		;;
+	*)
+		lan_mac=$(mtd_get_mac_binary "Factory" "0x2A")
+		wan_mac=$(mtd_get_mac_binary "Factory" "0x24")
+		;;
+	esac
+
+	case "$lan_mac" in
+		00:00:00:00:00:00);;
+		ff:ff:ff:ff:ff:ff);;
+		*)
+		[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" "$lan_mac"
+	;;
+	esac
+
+	case "$wan_mac" in
+		00:00:00:00:00:00);;
+		ff:ff:ff:ff:ff:ff);;
+		*)
+		[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" "$wan_mac"
+	;;
+	esac
+}
+
+board_config_update
+board=$(board_name)
+mediatek_setup_interfaces $board
+mediatek_setup_macs $board
+board_config_flush
+
+exit 0
