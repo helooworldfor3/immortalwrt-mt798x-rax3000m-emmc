@@ -93,7 +93,7 @@
          pinctrl-0 = <&mmc0_pins_default>;
          pinctrl-1 = <&mmc0_pins_uhs>;
          bus-width = <8>;
-         max-frequency = <52000000>;
+         max-frequency = <26000000>;
          cap-mmc-highspeed;
          vmmc-supply = <&reg_3p3v>;
          non-removable;
